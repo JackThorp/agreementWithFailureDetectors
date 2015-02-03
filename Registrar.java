@@ -62,7 +62,7 @@ public class Registrar {
 			Utils.out(pid, String.format("The rotating coordinator is %d.", coordinator));
 		} else
 		if (Utils.accuracy == Utils.Accuracy.EVENTUALLY_WEAK) {
-			int max = ((int) Math.ceil((double) (n + 1) / 2.)) - 1;
+			int max = ((int) Math.ceil((double) (n) / 2.)) - 1;
 			if (max > 1) {
 			do {
 				int p = random.nextInt(n) + 1;
