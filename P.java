@@ -6,7 +6,6 @@ public class P extends Process {
 	public P(String name, int pid, int n) {
 		super(name, pid, n);
 		detector = new PerfectFailureDetector(this);
-		// TODO Auto-generated constructor stub
 	}
 	
 	
