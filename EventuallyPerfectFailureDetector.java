@@ -7,7 +7,7 @@ public class EventuallyPerfectFailureDetector extends PerfectFailureDetector {
 	// Represents the timeout period for each neighbour
 	HashMap<Integer, Integer> timeouts;
 	private final Integer INITIAL_TIMEOUT = Utils.Delta; 
-	private final Integer TIMEOUT_INCR = 100; // TODO: What value should this be?
+	private final Integer TIMEOUT_INCR = 50; // TODO: What value should this be?
 	
 	public EventuallyPerfectFailureDetector(Process p) {
 		super(p);
