@@ -61,7 +61,7 @@ class PerfectFailureDetector implements IFailureDetector {
 		// Start a new timer
 		TimeoutListener timeoutListener = new TimeoutListener(source);
 		javax.swing.Timer timeoutTimer = 
-				new javax.swing.Timer(Utils.DELAY + Utils.Delta + 50, timeoutListener);
+				new javax.swing.Timer(Utils.DELAY + Utils.Delta, timeoutListener);
 		timeoutTimer.setRepeats(false);
 		timeoutTimers.put(source, timeoutTimer);
 		timeoutTimer.start();
