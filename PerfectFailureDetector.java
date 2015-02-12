@@ -14,7 +14,6 @@ class PerfectFailureDetector implements IFailureDetector {
 	class PeriodicHeartbeat extends TimerTask {
 		public void run() {
 			p.broadcast("heartbeat", String.format("%d", System.currentTimeMillis()));
-			Utils.out(p.pid, "***"+suspects.toString());
 		}
 	}
 	
@@ -27,10 +26,11 @@ class PerfectFailureDetector implements IFailureDetector {
 		}
 		
 		@Override
-		public void actionPerformed(ActionEvent e) {
+		public synchronized void actionPerformed(ActionEvent e) {
 			suspects.add(pid);
-			Utils.out(p.pid, String.format("P%d has been [un]suspected at %s",
-					pid, Utils.timeMillisToDateString(System.currentTimeMillis())));
+			Utils.out(p.pid, String.format("P%d has been suspected at %s",
+					pid, Utils.timeMillisToDateString(System.currentTimeMillis())
+					+ " , suspects = "+suspects.toString()));
 		}
 	}
 	
@@ -51,7 +51,7 @@ class PerfectFailureDetector implements IFailureDetector {
 		
 		// Remove the process from suspects
 		Integer source = m.getSource();
-		suspects.remove(source);
+		removeSuspect(source);
 		
 		// If there is a timer running for this process, stop it
 		if (timeoutTimers.containsKey(source)) {
@@ -71,6 +71,15 @@ class PerfectFailureDetector implements IFailureDetector {
 	public boolean isSuspect(Integer pid) {
 		return suspects.contains(pid);
 	}
+	
+	protected void removeSuspect(Integer pid) {
+		if (suspects.contains(pid)) {
+			Utils.out(p.pid, String.format("P%d has been unsuspected at %s",
+					pid, Utils.timeMillisToDateString(System.currentTimeMillis())));
+		}
+		suspects.remove(pid);
+	}
+	
 
 	public void isSuspected(Integer process) {
 		return;

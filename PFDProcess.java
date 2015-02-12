@@ -19,7 +19,6 @@ public class PFDProcess extends Process {
 		if (type.equals("heartbeat")) {
 			detector.receive(m);
 		}
-		
 	}
 
 	

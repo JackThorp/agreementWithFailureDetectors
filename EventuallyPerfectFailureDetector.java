@@ -7,7 +7,7 @@ public class EventuallyPerfectFailureDetector extends PerfectFailureDetector {
 	// Represents the timeout period for each neighbour
 	HashMap<Integer, Integer> timeouts;
 	private final Integer INITIAL_TIMEOUT = Utils.Delta; 
-	private final Integer TIMEOUT_INCR = 100; // TODO
+	private final Integer TIMEOUT_INCR = 100; // TODO: What value should this be?
 	
 	public EventuallyPerfectFailureDetector(Process p) {
 		super(p);
@@ -28,14 +28,20 @@ public class EventuallyPerfectFailureDetector extends PerfectFailureDetector {
 		}
 		
 		// Get the timeout for this process, if none is found, add the initial_timeout
-		Integer timeout = (timeouts.containsKey(source)) ? timeouts.get(source) 
-						: INITIAL_TIMEOUT;
+		Integer timeout;
+		if (timeouts.containsKey(source)) {
+			timeout = timeouts.get(source);
+		}
+		else {
+			timeout = INITIAL_TIMEOUT;
+			timeouts.put(source, timeout);
+		}
 		
 		if (isSuspect(source)) {
 			// Falsely suspected, increase the timeout!
 			timeout += TIMEOUT_INCR;
 			timeouts.put(source, timeout);
-			suspects.remove(source);
+			removeSuspect(source);
 		}
 		
 		// Start a new timer
