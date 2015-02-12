@@ -17,6 +17,7 @@ public class EventuallyPerfectFailureDetector extends PerfectFailureDetector {
 	
 	@Override
 	public void receive(Message m) {
+		
 		Utils.out(p.pid, m.toString());	
 		Integer source = m.getSource();
 		
@@ -28,11 +29,11 @@ public class EventuallyPerfectFailureDetector extends PerfectFailureDetector {
 		
 		// Get the timeout for this process, if none is found, add the initial_timeout
 		Integer timeout = (timeouts.containsKey(source)) ? timeouts.get(source) 
-						: timeouts.put(source, INITIAL_TIMEOUT);
+						: INITIAL_TIMEOUT;
 		
 		if (isSuspect(source)) {
 			// Falsely suspected, increase the timeout!
-			timeout = timeouts.get(source) + TIMEOUT_INCR;
+			timeout += TIMEOUT_INCR;
 			timeouts.put(source, timeout);
 			suspects.remove(source);
 		}

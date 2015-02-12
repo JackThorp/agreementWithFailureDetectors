@@ -14,6 +14,7 @@ class PerfectFailureDetector implements IFailureDetector {
 	class PeriodicHeartbeat extends TimerTask {
 		public void run() {
 			p.broadcast("heartbeat", String.format("%d", System.currentTimeMillis()));
+			Utils.out(p.pid, "***"+suspects.toString());
 		}
 	}
 	
