@@ -1,13 +1,13 @@
 
-public class P extends Process {
-
+public class PFDProcess extends Process {
+	
 	private PerfectFailureDetector detector;
 	
-	public P(String name, int pid, int n) {
+	public PFDProcess(String name, int pid, int n) {
 		super(name, pid, n);
 		detector = new PerfectFailureDetector(this);
 	}
-	
+
 	
 	public void begin() {
 		detector.begin();
@@ -27,7 +27,7 @@ public class P extends Process {
 		String name = args[0];
 		int id = Integer.parseInt(args[1]);
 		int n = Integer.parseInt(args[2]);
-		P p = new P(name, id, n);
+		PFDProcess p = new PFDProcess(name, id, n);
 		p.registeR();
 		p.begin();
 	}
