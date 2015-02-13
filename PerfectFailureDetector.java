@@ -10,6 +10,11 @@ class PerfectFailureDetector implements IFailureDetector {
 	Timer t;
 	HashSet<Integer> suspects;
 	HashMap<Integer, javax.swing.Timer> timeoutTimers;
+	
+	// Represents the timeout period for each neighbour
+	HashMap<Integer, Integer> timeouts;
+	Integer INITIAL_TIMEOUT; 
+	Integer TIMEOUT_INCR; 
 
 	class PeriodicHeartbeat extends TimerTask {
 		public void run() {
@@ -31,6 +36,7 @@ class PerfectFailureDetector implements IFailureDetector {
 			Utils.out(p.pid, String.format("P%d has been suspected at %s",
 					pid, Utils.timeMillisToDateString(System.currentTimeMillis())
 					+ " , suspects = "+suspects.toString()));
+			isSuspected(pid);
 		}
 	}
 	
@@ -40,18 +46,32 @@ class PerfectFailureDetector implements IFailureDetector {
 		t = new Timer();
 		timeoutTimers = new HashMap<Integer, javax.swing.Timer>();
 		suspects = new HashSet<Integer>();
+		timeouts = new HashMap<Integer, Integer>();
+		INITIAL_TIMEOUT = Utils.Delta + Utils.DELAY; 
+		TIMEOUT_INCR = 0; 
 	}
 
 	public void begin() {
 		t.schedule(new PeriodicHeartbeat(), 0, Utils.Delta);
+		
+		// Start a timeout for each neighbour
+		for (int n_pid = 1; n_pid < p.n; n_pid++) {
+			if (n_pid != p.pid) {
+				TimeoutListener timeoutListener = new TimeoutListener(n_pid);
+				javax.swing.Timer timeoutTimer = new javax.swing.Timer(INITIAL_TIMEOUT, timeoutListener);
+				timeoutTimer.setRepeats(false);
+				timeoutTimers.put(n_pid, timeoutTimer);
+				timeoutTimer.start();
+				timeouts.put(n_pid, INITIAL_TIMEOUT);
+			}
+		}
+		
 	}
 
 	public void receive(Message m) {
-		Utils.out(p.pid, m.toString());	
-		
-		// Remove the process from suspects
+		Utils.out(p.pid, m.toString());
+
 		Integer source = m.getSource();
-		removeSuspect(source);
 		
 		// If there is a timer running for this process, stop it
 		if (timeoutTimers.containsKey(source)) {
@@ -59,13 +79,30 @@ class PerfectFailureDetector implements IFailureDetector {
 			oldTimer.stop();
 		}
 		
+		// Get the timeout period for this neighbour
+		Integer timeout;
+		if(timeouts.containsKey(source)) {
+			timeout = timeouts.get(source);	
+		} else {
+			timeout = INITIAL_TIMEOUT;
+			timeouts.put(source, timeout);
+		}
+		
+		
+		if (isSuspect(source)) {
+			// Falsely suspected, increase the timeout!
+			timeout += TIMEOUT_INCR;
+			timeouts.put(source, timeout);
+			removeSuspect(source);
+		}
+		
 		// Start a new timer
 		TimeoutListener timeoutListener = new TimeoutListener(source);
-		javax.swing.Timer timeoutTimer = 
-				new javax.swing.Timer(Utils.DELAY + Utils.Delta, timeoutListener);
+		javax.swing.Timer timeoutTimer = new javax.swing.Timer(timeout, timeoutListener);
 		timeoutTimer.setRepeats(false);
 		timeoutTimers.put(source, timeoutTimer);
 		timeoutTimer.start();
+		
 	}
 
 	public boolean isSuspect(Integer pid) {
@@ -74,15 +111,24 @@ class PerfectFailureDetector implements IFailureDetector {
 	
 	protected void removeSuspect(Integer pid) {
 		if (suspects.contains(pid)) {
+			suspects.remove(pid);
 			Utils.out(p.pid, String.format("P%d has been unsuspected at %s",
-					pid, Utils.timeMillisToDateString(System.currentTimeMillis())));
+					pid, Utils.timeMillisToDateString(System.currentTimeMillis())
+					+ " , suspects = "+suspects.toString()));
 		}
-		suspects.remove(pid);
 	}
 	
 
 	public void isSuspected(Integer process) {
+	
+		SFDProcess fuck = (SFDProcess) p; 
+		fuck.signalCondition();
+		Utils.out(p.pid, "HEEEEEEEEEEEEEEEEEEEREEE");
 		return;
+	}
+	
+	protected void startTimeout(Integer process) {
+		
 	}
 
 	

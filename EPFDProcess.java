@@ -3,8 +3,6 @@ public class EPFDProcess extends Process {
 
 	private EventuallyPerfectFailureDetector detector;
 
-	
-
 	public EPFDProcess(String name, int pid, int n) {
 		super(name, pid, n);
 		detector = new EventuallyPerfectFailureDetector(this);
