@@ -33,9 +33,11 @@ class PerfectFailureDetector implements IFailureDetector {
 		@Override
 		public synchronized void actionPerformed(ActionEvent e) {
 			suspects.add(pid);
+			
 			Utils.out(p.pid, String.format("P%d has been suspected at %s",
 					pid, Utils.timeMillisToDateString(System.currentTimeMillis())
 					+ " , suspects = "+suspects.toString()));
+			
 			isSuspected(pid);
 		}
 	}
@@ -55,7 +57,7 @@ class PerfectFailureDetector implements IFailureDetector {
 		t.schedule(new PeriodicHeartbeat(), 0, Utils.Delta);
 		
 		// Start a timeout for each neighbour
-		for (int n_pid = 1; n_pid < p.n; n_pid++) {
+		for (int n_pid = 1; n_pid <= p.n; n_pid++) {
 			if (n_pid != p.pid) {
 				TimeoutListener timeoutListener = new TimeoutListener(n_pid);
 				javax.swing.Timer timeoutTimer = new javax.swing.Timer(INITIAL_TIMEOUT, timeoutListener);
@@ -121,10 +123,9 @@ class PerfectFailureDetector implements IFailureDetector {
 
 	public void isSuspected(Integer process) {
 	
-		SFDProcess fuck = (SFDProcess) p; 
-		fuck.signalCondition();
-		Utils.out(p.pid, "HEEEEEEEEEEEEEEEEEEEREEE");
-		return;
+		if(isSuspect(process)){
+			p.wakeUp();
+		}
 	}
 	
 	protected void startTimeout(Integer process) {

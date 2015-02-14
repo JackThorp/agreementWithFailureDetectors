@@ -1,3 +1,4 @@
+import java.util.HashMap;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -10,7 +11,7 @@ public class SFDProcess extends Process {
 	private Integer x;
 	private Integer r;
 	private Integer v;
-	private boolean received;
+	private HashMap<Integer, Integer> received;
 	
     private final Lock lock = new ReentrantLock();
 
@@ -21,67 +22,38 @@ public class SFDProcess extends Process {
 		super(name, pid, n);
 		x = pid;
 		detector = new StrongFailureDetector(this);
-		received = false;
+		received = new HashMap<Integer, Integer>();
 	}
 	
 	public void begin() throws InterruptedException {
 		detector.begin();
 
 		Utils.out(pid, String.format("My pid is %s", x)); 
-		// TODO: solve fact that pids are not like 1, 2, 3 etc so this will not work ??
 		// Loop through rounds, r, and broadcast on your turn
-		for(r = 1; r < n; n++ ) {
+		for(r = 1; r <= n; r++ ) {
 			if(pid == r){
-				Utils.out(pid, "BROADCASTING A VALUE"); 
-				broadcast("VAL", String.format("%d",x)); // if your turn broadcast your decision, x. 
-			}
-			
-			// collect r will block until a receive event or suspicion
-			if(collect(r)) {	
-				Utils.out(pid, "RECEIVED A VALUE"); 
-				x = v; // update decision on successful collection.
-			}
-			else {
-				Utils.out(pid, "DIDNT RECEIVE A VALUE"); 
+				broadcast("VAL", String.format("%d",x)); 
+			} else {
+				if(collect(r)) {	
+					x = v; // update decision on successful collection.
+				}
 			}
 		}
 
-		
+		Utils.out(pid, String.format("Decided: %d", x));
 	}
 	
 	public synchronized boolean collect(int r) throws InterruptedException {
-		/*
-		while(!received && !detector.isSuspect(r)) { 
-			Utils.out(pid, "WAITING IN COLLECT()");
+
+		while(!received.containsKey(r) && !detector.isSuspect(r)) { 
+			Utils.out(pid, String.format("WAITING IN COLLECT() FOR %d", r));
 			wait(); 
 		}
-		Utils.out(pid, "GOT OUT YO ");
-
-		received = false;
-		notifyAll(); 
+		
+		//received.remove(r);
+		notifyAll();
 	
 		// can this value change between breaking out of loop and reaching return statement?
-		 * 
-		 */
-		lock.lock();
-
-        try {
-			while(!received && !detector.isSuspect(r)){
-				Utils.out(pid, "WAITING AGAIN:(");
-				notCollected.await();
-				Utils.out(pid, "STOPPED WAITING:)");
-			}
-			if (received) {
-				Utils.out(pid, "RECEIVED YOOOOO");
-			}
-			else {
-				Utils.out(pid, "SUSPECTED YOOOOO");
-			}
-        }
-        finally {
-        	lock.unlock();
-        }
-			
 		return !detector.isSuspect(r);
 	}
 	
@@ -92,11 +64,10 @@ public class SFDProcess extends Process {
 		if (type.equals("heartbeat")) {
 			detector.receive(m);
 		} else if (type.equals("VAL")) {
-			if(m.getSource() == r) {
-				v = Integer.parseInt(m.getPayload()); //should be pid value?
-				received = true;
-				notCollected.signalAll();
-			}
+			Utils.out(pid, "MSG:" + m.toString());
+			v = Integer.parseInt(m.getPayload()); //should be pid value?
+			received.put(m.getSource(), v);
+			wakeUp();
 		}
 	}
 
@@ -114,10 +85,5 @@ public class SFDProcess extends Process {
 			
 		}
 	}
-	
-	public void signalCondition() {
-		notCollected.signalAll();
-	}
-	
 
 }
