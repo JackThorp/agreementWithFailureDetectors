@@ -13,11 +13,6 @@ public class SFDProcess extends Process {
 	private Integer v;
 	private HashMap<Integer, Integer> received;
 	
-    private final Lock lock = new ReentrantLock();
-
-    public final Condition notCollected = lock.newCondition();
-	
-	
 	public SFDProcess(String name, int pid, int n) {
 		super(name, pid, n);
 		x = pid;
@@ -58,7 +53,7 @@ public class SFDProcess extends Process {
 	}
 	
 	
-	public void receive(Message m) {
+	public synchronized void receive(Message m) {
 		Utils.out(pid, "RECEIVED A MESSAGE of type = " + m.getType());
 		String type = m.getType();
 		if (type.equals("heartbeat")) {
@@ -67,7 +62,7 @@ public class SFDProcess extends Process {
 			Utils.out(pid, "MSG:" + m.toString());
 			v = Integer.parseInt(m.getPayload()); //should be pid value?
 			received.put(m.getSource(), v);
-			wakeUp();
+			notifyAll();
 		}
 	}
 
