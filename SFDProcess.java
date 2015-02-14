@@ -1,12 +1,9 @@
 import java.util.HashMap;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+
 
 public class SFDProcess extends Process {
 
 	private StrongFailureDetector detector;
-	
 	
 	private Integer x;
 	private Integer r;
@@ -23,14 +20,13 @@ public class SFDProcess extends Process {
 	public void begin() throws InterruptedException {
 		detector.begin();
 
-		Utils.out(pid, String.format("My pid is %s", x)); 
 		// Loop through rounds, r, and broadcast on your turn
 		for(r = 1; r <= n; r++ ) {
 			if(pid == r){
-				broadcast("VAL", String.format("%d",x)); 
+				broadcast("VAL", String.format("%d", x)); 
 			} else {
 				if(collect(r)) {	
-					x = v; // update decision on successful collection.
+					x = v;
 				}
 			}
 		}
@@ -41,26 +37,22 @@ public class SFDProcess extends Process {
 	public synchronized boolean collect(int r) throws InterruptedException {
 
 		while(!received.containsKey(r) && !detector.isSuspect(r)) { 
-			Utils.out(pid, String.format("WAITING IN COLLECT() FOR %d", r));
 			wait(); 
 		}
-		
-		//received.remove(r);
-		notifyAll();
-	
+			
 		// can this value change between breaking out of loop and reaching return statement?
 		return !detector.isSuspect(r);
 	}
 	
 	
 	public synchronized void receive(Message m) {
-		Utils.out(pid, "RECEIVED A MESSAGE of type = " + m.getType());
+		Utils.out(pid, "Received MESSAGE: " + m);
 		String type = m.getType();
 		if (type.equals("heartbeat")) {
 			detector.receive(m);
-		} else if (type.equals("VAL")) {
-			Utils.out(pid, "MSG:" + m.toString());
-			v = Integer.parseInt(m.getPayload()); //should be pid value?
+		} 
+		else if (type.equals("VAL")) {
+			v = Integer.parseInt(m.getPayload());
 			received.put(m.getSource(), v);
 			notifyAll();
 		}
@@ -76,9 +68,7 @@ public class SFDProcess extends Process {
 		try {
 			p.begin();
 		}
-		catch (InterruptedException e) {
-			
-		}
+		catch (InterruptedException e) {}
 	}
 
 }
