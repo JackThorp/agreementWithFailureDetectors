@@ -1,21 +1,14 @@
 import java.util.HashMap;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+
 
 public class SFDProcess extends Process {
 
 	private StrongFailureDetector detector;
 	
-	
 	private Integer x;
 	private Integer r;
 	private Integer v;
 	private HashMap<Integer, Integer> received;
-	
-    private final Lock lock = new ReentrantLock();
-
-    public final Condition notCollected = lock.newCondition();
 	
 	
 	public SFDProcess(String name, int pid, int n) {
@@ -32,7 +25,7 @@ public class SFDProcess extends Process {
 		// Loop through rounds, r, and broadcast on your turn
 		for(r = 1; r <= n; r++ ) {
 			if(pid == r){
-				broadcast("VAL", String.format("%d",x)); 
+				broadcast("VAL", String.format("%d", x)); 
 			} else {
 				if(collect(r)) {	
 					x = v; // update decision on successful collection.
@@ -63,7 +56,8 @@ public class SFDProcess extends Process {
 		String type = m.getType();
 		if (type.equals("heartbeat")) {
 			detector.receive(m);
-		} else if (type.equals("VAL")) {
+		} 
+		else if (type.equals("VAL")) {
 			Utils.out(pid, "MSG:" + m.toString());
 			v = Integer.parseInt(m.getPayload()); //should be pid value?
 			received.put(m.getSource(), v);
@@ -81,9 +75,7 @@ public class SFDProcess extends Process {
 		try {
 			p.begin();
 		}
-		catch (InterruptedException e) {
-			
-		}
+		catch (InterruptedException e) {}
 	}
 
 }

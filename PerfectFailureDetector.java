@@ -22,6 +22,7 @@ class PerfectFailureDetector implements IFailureDetector {
 		}
 	}
 	
+	
 	class TimeoutListener implements ActionListener {
 
 		private final Integer pid;
@@ -30,6 +31,7 @@ class PerfectFailureDetector implements IFailureDetector {
 			this.pid = pid;
 		}
 		
+		// Action performed after timeout expires, happens only once.
 		@Override
 		public synchronized void actionPerformed(ActionEvent e) {
 			suspects.add(pid);
@@ -59,12 +61,7 @@ class PerfectFailureDetector implements IFailureDetector {
 		// Start a timeout for each neighbour
 		for (int n_pid = 1; n_pid <= p.n; n_pid++) {
 			if (n_pid != p.pid) {
-				TimeoutListener timeoutListener = new TimeoutListener(n_pid);
-				javax.swing.Timer timeoutTimer = new javax.swing.Timer(INITIAL_TIMEOUT, timeoutListener);
-				timeoutTimer.setRepeats(false);
-				timeoutTimers.put(n_pid, timeoutTimer);
-				timeoutTimer.start();
-				timeouts.put(n_pid, INITIAL_TIMEOUT);
+				startTimeout(n_pid, INITIAL_TIMEOUT);
 			}
 		}
 		
@@ -99,19 +96,22 @@ class PerfectFailureDetector implements IFailureDetector {
 		}
 		
 		// Start a new timer
-		TimeoutListener timeoutListener = new TimeoutListener(source);
-		javax.swing.Timer timeoutTimer = new javax.swing.Timer(timeout, timeoutListener);
-		timeoutTimer.setRepeats(false);
-		timeoutTimers.put(source, timeoutTimer);
-		timeoutTimer.start();
-		
+		startTimeout(source, timeout);
 	}
 
 	public boolean isSuspect(Integer pid) {
 		return suspects.contains(pid);
 	}
+
+
+	public void isSuspected(Integer process) {
+		if(isSuspect(process)){
+			p.wakeUp();
+		}
+	}
 	
-	protected void removeSuspect(Integer pid) {
+	
+	private void removeSuspect(Integer pid) {
 		if (suspects.contains(pid)) {
 			suspects.remove(pid);
 			Utils.out(p.pid, String.format("P%d has been unsuspected at %s",
@@ -120,16 +120,13 @@ class PerfectFailureDetector implements IFailureDetector {
 		}
 	}
 	
-
-	public void isSuspected(Integer process) {
 	
-		if(isSuspect(process)){
-			p.wakeUp();
-		}
-	}
-	
-	protected void startTimeout(Integer process) {
-		
+	private void startTimeout(Integer process, Integer timeout) {
+		TimeoutListener timeoutListener = new TimeoutListener(process);
+		javax.swing.Timer timeoutTimer = new javax.swing.Timer(timeout, timeoutListener);
+		timeoutTimer.setRepeats(false);
+		timeoutTimers.put(process, timeoutTimer);
+		timeoutTimer.start();
 	}
 
 	
