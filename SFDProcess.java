@@ -6,8 +6,6 @@ public class SFDProcess extends Process {
 	private StrongFailureDetector detector;
 	
 	private Integer x;
-	private Integer r;
-	private Integer v;
 	private HashMap<Integer, Integer> received;
 	
 	public SFDProcess(String name, int pid, int n) {
@@ -19,14 +17,14 @@ public class SFDProcess extends Process {
 	
 	public void begin() throws InterruptedException {
 		detector.begin();
-
+		
 		// Loop through rounds, r, and broadcast on your turn
-		for(r = 1; r <= n; r++ ) {
+		for(int r = 1; r <= n; r++ ) {
 			if(pid == r){
 				broadcast("VAL", String.format("%d", x)); 
 			} else {
 				if(collect(r)) {	
-					x = v;
+					x = received.get(r);
 				}
 			}
 		}
@@ -52,7 +50,7 @@ public class SFDProcess extends Process {
 			detector.receive(m);
 		} 
 		else if (type.equals("VAL")) {
-			v = Integer.parseInt(m.getPayload());
+			int v = Integer.parseInt(m.getPayload());
 			received.put(m.getSource(), v);
 			notifyAll();
 		}
