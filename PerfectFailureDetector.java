@@ -55,7 +55,7 @@ class PerfectFailureDetector implements IFailureDetector {
 		TIMEOUT_INCR = 0; 
 	}
 
-	public void begin() {
+	public synchronized void begin() {
 		t.schedule(new PeriodicHeartbeat(), 0, Utils.Delta);
 		
 		// Start a timeout for each neighbour
@@ -67,7 +67,7 @@ class PerfectFailureDetector implements IFailureDetector {
 		
 	}
 
-	public void receive(Message m) {
+	public synchronized void receive(Message m) {
 
 		Integer source = m.getSource();
 		
@@ -110,7 +110,7 @@ class PerfectFailureDetector implements IFailureDetector {
 	}
 	
 	
-	private void removeSuspect(Integer pid) {
+	private synchronized void removeSuspect(Integer pid) {
 		if (suspects.contains(pid)) {
 			suspects.remove(pid);
 			Utils.out(p.pid, String.format("P%d has been unsuspected at %s",
