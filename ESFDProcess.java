@@ -11,7 +11,6 @@ public class ESFDProcess extends Process {
 	
 	State state;
 	private Integer x, acks, nacks;
-	//TODO change name of received to "outcomes" ?
 	private HashMap<Integer, Message> outcomes;
 	private HashMap<Integer, ArrayList<Message>> stash;
 	private EventuallyStrongFailureDetector detector;
@@ -32,78 +31,70 @@ public class ESFDProcess extends Process {
 		detector.begin();
 		
 		Integer estimate = x;
+		// Round number(k), last time OUTCOME received(k), coordinator(c)
 		Integer r = 0;
 		Integer k = 0;
 		Integer c = 0;
 		while(state == State.UNDECIDED) {
 			r++;
-			addMesageListToStash(r);
+			createListForRound(r);
+			
+			// Get the coordinator for this round
 			c = (r % n) + 1;
-
-			Utils.out(pid, "____________________________________");
-			Utils.out(pid, "ROUND = " + r + " , COORDINATOR = " + c);
-			Message valMessage = new Message(pid, c, "VAL", String.format("%d,%d,%d",estimate, r, k));
-			Utils.out(pid, "IM SENDING VAL  =  " + valMessage);
+			boolean isCoordinator = pid == c;
+			
+			// Send our estimate to the coordinator
+			Message valMessage = new Message(pid, c, "VAL", String.format("%d,%d,%d", estimate, r, k));
 			unicast(valMessage);
-			if(pid == c) {
-				Utils.out(pid, "IM THE COORDINATOR");
-				if(uponReceival(r)){
+			
+			if(isCoordinator) {
+				if(collectVals(r)){
 					estimate = getEstimate(r);
-					Utils.out(pid, "IM SENDING THE OUTCOME = " + estimate);
 					broadcast("OUTCOME", String.format("%d,%d", estimate, r));
 				}
-			} else {
-				Utils.out(pid, "IM NOT THE COORDINATOR");
-				if(collect(c)) {
-					Utils.out(pid, "RECEIVED A MESSAGE FROM COORDINATOR");
-					String[] payload = outcomes.get(c).getPayload().split(",");
-					Utils.out(pid, "ABOUT TO ACK");
-					estimate = Integer.parseInt(payload[0]);
-					k = Integer.parseInt(payload[1]);
-					unicast(new Message(pid, c, "ACK", r.toString()));
-					outcomes.remove(c);
-				} else {
-					Utils.out(pid, "DIDNT RECEIVE A MESSAGE FROM THE COORDINATOR");
-					unicast(new Message(pid, c, "NACK", r.toString()));					
-				}
-					
+			} 
+			else if(collectOutcome(c)) {
+				String[] payload = outcomes.get(c).getPayload().split(",");
+				estimate = Integer.parseInt(payload[0]);
+				k = Integer.parseInt(payload[1]);
+				unicast(new Message(pid, c, "ACK", r.toString()));
+				outcomes.remove(c);
+			} 
+			else {
+				unicast(new Message(pid, c, "NACK", r.toString()));					
 			}
+					
 			
-			if(pid == c) {
-				if(uponResponse(c)){
-					if(acks >= Math.ceil((n / 2))) {
-						broadcast("DECISION", String.format("%d,%d", estimate, r));
-						Utils.out(pid, String.format("Decided: %d", estimate));
-						state = State.DECIDED;
-					}
+			if(isCoordinator && collectAcks(c)){
+				if(acks >= Math.ceil((n / 2))) {
+					broadcast("DECISION", String.format("%d,%d", estimate, r));
+					Utils.out(pid, String.format("Decided: %d", estimate));
+					state = State.DECIDED;
 				}
 			}
 			acks = 0;
 			nacks = 0;
 		}
-		
-		
 	}
 	
-	public synchronized boolean collect(int c) throws InterruptedException {
+	
+	
+	public synchronized boolean collectOutcome(int c) throws InterruptedException {
 		while(!outcomes.containsKey(c) && !detector.isSuspect(c)) {	wait();	}
 		return !detector.isSuspect(c);
 	}
 	
-	public synchronized boolean uponReceival(int r) throws InterruptedException {
+	public synchronized boolean collectVals(int r) throws InterruptedException {
 		while(stash.get(r).size() < Math.ceil(n/2)){ wait(); }
 		return true;
 	}
 	
-	public synchronized boolean uponResponse(int r) throws InterruptedException {
+	public synchronized boolean collectAcks(int r) throws InterruptedException {
 		while(acks < Math.ceil(n/2) && nacks < Math.ceil(n/2)){ wait(); }
 		return true;
 	}
 	
 	public synchronized void receive(Message m) {
-		if(!m.getType().equals("heartbeat")){
-			Utils.out(pid, "Received MESSAGE: " + m);
-		}
 		
 		switch(m.getType()) {
 			case "heartbeat": 
@@ -117,9 +108,8 @@ public class ESFDProcess extends Process {
 			
 			case "VAL":
 				Integer round = Integer.parseInt(m.getPayload().split(",")[1]);
-				addMesageListToStash(round);
+				createListForRound(round);
 				stash.get(round).add(m);
-				
 				notifyAll();
 				break;
 			
@@ -134,23 +124,25 @@ public class ESFDProcess extends Process {
 				break;
 				
 			case "DECISION":
-				// TODO: Does the round of the message have to be the same as this processes' round?
 				if (state == State.UNDECIDED) {
 					Integer value = Integer.parseInt(m.getPayload().split(",")[0]);
-					Utils.out(pid, String.format("Decided: %d", value));
 					state = State.DECIDED;
+					Utils.out(pid, String.format("Decided: %d", value));
 				}
 				
 		}
 
 	}
 	
-	private void addMesageListToStash(int round) {
+	
+	/* Takes care of creating an empty list in stash for each round */
+	private void createListForRound(int round) {
 		if (!stash.containsKey(round)) {
 			ArrayList<Message> msgs = new ArrayList<Message>();
 			stash.put(round, msgs);
 		}
 	}
+	
 	
 	private int getEstimate(int r) {
 		ArrayList<Message> msgs = stash.get(r);

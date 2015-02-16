@@ -38,7 +38,7 @@ class PerfectFailureDetector implements IFailureDetector {
 			
 			Utils.out(p.pid, String.format("P%d has been suspected at %s",
 					pid, Utils.timeMillisToDateString(System.currentTimeMillis())
-					+ " , suspects = "+suspects.toString()));
+					));
 			
 			isSuspected(pid);
 		}
