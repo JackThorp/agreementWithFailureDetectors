@@ -6,15 +6,15 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 class PerfectFailureDetector implements IFailureDetector {
-	Process p;
-	Timer t;
-	HashSet<Integer> suspects;
-	HashMap<Integer, javax.swing.Timer> timeoutTimers;
+	protected Process p;
+    protected Timer t;
+    protected HashSet<Integer> suspects;
+    protected HashMap<Integer, javax.swing.Timer> timeoutTimers;
 	
 	// Represents the timeout period for each neighbour
-	HashMap<Integer, Integer> timeouts;
-	Integer INITIAL_TIMEOUT;
-	Integer TIMEOUT_INCR;
+    protected HashMap<Integer, Integer> timeouts;
+    protected Integer INITIAL_TIMEOUT;
+    protected Integer TIMEOUT_INCR;
 	
 	// System delay set to average + 2 standard deviations.
 	protected final Integer SYSTEM_DELAY = 115; 
