@@ -17,7 +17,7 @@ class PerfectFailureDetector implements IFailureDetector {
     protected Integer TIMEOUT_INCR;
 	
 	// System delay set to average + 2 standard deviations.
-	protected final Integer SYSTEM_DELAY = 115; 
+	protected final Integer SYSTEM_DELAY = 15; 
 
 	class PeriodicHeartbeat extends TimerTask {
 		public void run() {
