@@ -42,17 +42,14 @@ public class ESFDProcess extends Process {
 			// Get the coordinator for this round
 			c = (r % n) + 1;
 			boolean isCoordinator = pid == c;
-			Utils.out(pid, "___________ ROUND: " + r + " , COORD: " + c + " ___________");
 			// Send our estimate to the coordinator
 			Message valMessage = new Message(pid, c, "VAL", String.format("%d,%d,%d", estimate, r, k));
 			unicast(valMessage);
-			Utils.out(pid, "Sent VAL");
-			
+
 			if(isCoordinator) {
 				if(collectVals(r)){
 					estimate = getEstimate(r);
 					broadcast("OUTCOME", String.format("%d,%d", estimate, r));
-					Utils.out(pid, "Sent OUTCOME");
 				}
 			} 
 			else if(collectOutcome(c)) {
@@ -82,11 +79,7 @@ public class ESFDProcess extends Process {
 	
 	
 	public synchronized boolean collectOutcome(int c) throws InterruptedException {
-		while(!outcomes.containsKey(c) && !detector.isSuspect(c)) {	
-			Utils.out(pid, "Waiting to collect outcome.");
-			wait();
-		}
-		Utils.out(pid, "Stopped waiting to collect outcome.");
+		while(!outcomes.containsKey(c) && !detector.isSuspect(c)) {	wait(); }
 		return !detector.isSuspect(c);
 	}
 	

@@ -6,15 +6,15 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 class PerfectFailureDetector implements IFailureDetector {
-	private Process p;
-	private Timer t;
-	private HashSet<Integer> suspects;
-	private HashMap<Integer, javax.swing.Timer> timeoutTimers;
+	Process p;
+	Timer t;
+	HashSet<Integer> suspects;
+	HashMap<Integer, javax.swing.Timer> timeoutTimers;
 	
 	// Represents the timeout period for each neighbour
-	private HashMap<Integer, Integer> timeouts;
-	protected Integer INITIAL_TIMEOUT; 
-	protected Integer TIMEOUT_INCR;
+	HashMap<Integer, Integer> timeouts;
+	Integer INITIAL_TIMEOUT;
+	Integer TIMEOUT_INCR;
 	
 	// System delay set to average + 2 standard deviations.
 	protected final Integer SYSTEM_DELAY = 115; 
@@ -37,10 +37,10 @@ class PerfectFailureDetector implements IFailureDetector {
 		// Action performed after timeout expires, happens only once.
 		@Override
 		public synchronized void actionPerformed(ActionEvent e) {
-			
-			Utils.out(p.pid, String.format("P%d has been suspected at %s",
-					pid, Utils.timeMillisToDateString(System.currentTimeMillis())
-					));
+            suspects.add(pid);
+
+            Utils.out(p.pid, String.format("P%d has been suspected at %s",
+					pid, Utils.timeMillisToDateString(System.currentTimeMillis())));
 			
 			isSuspected(pid);
 		}
@@ -107,9 +107,7 @@ class PerfectFailureDetector implements IFailureDetector {
 	}
 
 
-	public synchronized void isSuspected(Integer pid) {
-		suspects.add(pid);
-		Utils.out(pid, "added " + pid );
+	public void isSuspected(Integer pid) {
 		if(isSuspect(pid)){
 			p.wakeUp();
 		}
