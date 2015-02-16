@@ -6,15 +6,18 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 class PerfectFailureDetector implements IFailureDetector {
-	Process p;
-	Timer t;
-	HashSet<Integer> suspects;
-	HashMap<Integer, javax.swing.Timer> timeoutTimers;
+	private Process p;
+	private Timer t;
+	private HashSet<Integer> suspects;
+	private HashMap<Integer, javax.swing.Timer> timeoutTimers;
 	
 	// Represents the timeout period for each neighbour
-	HashMap<Integer, Integer> timeouts;
-	Integer INITIAL_TIMEOUT; 
-	Integer TIMEOUT_INCR; 
+	private HashMap<Integer, Integer> timeouts;
+	protected Integer INITIAL_TIMEOUT; 
+	protected Integer TIMEOUT_INCR;
+	
+	// System delay set to average + 2 standard deviations.
+	protected final Integer SYSTEM_DELAY = 115; 
 
 	class PeriodicHeartbeat extends TimerTask {
 		public void run() {
@@ -34,7 +37,6 @@ class PerfectFailureDetector implements IFailureDetector {
 		// Action performed after timeout expires, happens only once.
 		@Override
 		public synchronized void actionPerformed(ActionEvent e) {
-			suspects.add(pid);
 			
 			Utils.out(p.pid, String.format("P%d has been suspected at %s",
 					pid, Utils.timeMillisToDateString(System.currentTimeMillis())
@@ -51,11 +53,12 @@ class PerfectFailureDetector implements IFailureDetector {
 		timeoutTimers = new HashMap<Integer, javax.swing.Timer>();
 		suspects = new HashSet<Integer>();
 		timeouts = new HashMap<Integer, Integer>();
-		INITIAL_TIMEOUT = Utils.Delta + Utils.DELAY; 
+		INITIAL_TIMEOUT = Utils.Delta + Utils.DELAY + SYSTEM_DELAY; 
 		TIMEOUT_INCR = 0; 
 	}
 
-	public synchronized void begin() {
+	
+	public void begin() {
 		t.schedule(new PeriodicHeartbeat(), 0, Utils.Delta);
 		
 		// Start a timeout for each neighbour
@@ -64,9 +67,9 @@ class PerfectFailureDetector implements IFailureDetector {
 				startTimeout(n_pid, INITIAL_TIMEOUT);
 			}
 		}
-		
 	}
 
+	
 	public synchronized void receive(Message m) {
 
 		Integer source = m.getSource();
@@ -98,13 +101,16 @@ class PerfectFailureDetector implements IFailureDetector {
 		startTimeout(source, timeout);
 	}
 
+	
 	public boolean isSuspect(Integer pid) {
 		return suspects.contains(pid);
 	}
 
 
-	public void isSuspected(Integer process) {
-		if(isSuspect(process)){
+	public synchronized void isSuspected(Integer pid) {
+		suspects.add(pid);
+		Utils.out(pid, "added " + pid );
+		if(isSuspect(pid)){
 			p.wakeUp();
 		}
 	}
@@ -114,11 +120,10 @@ class PerfectFailureDetector implements IFailureDetector {
 		if (suspects.contains(pid)) {
 			suspects.remove(pid);
 			Utils.out(p.pid, String.format("P%d has been unsuspected at %s",
-					pid, Utils.timeMillisToDateString(System.currentTimeMillis())
-					+ " , suspects = "+suspects.toString()));
+					pid, Utils.timeMillisToDateString(System.currentTimeMillis())));
 		}
 	}
-	
+
 	
 	private void startTimeout(Integer process, Integer timeout) {
 		TimeoutListener timeoutListener = new TimeoutListener(process);
@@ -127,7 +132,4 @@ class PerfectFailureDetector implements IFailureDetector {
 		timeoutTimers.put(process, timeoutTimer);
 		timeoutTimer.start();
 	}
-
-	
-	
 }

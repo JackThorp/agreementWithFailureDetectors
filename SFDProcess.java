@@ -38,7 +38,6 @@ public class SFDProcess extends Process {
 			wait(); 
 		}
 			
-		// can this value change between breaking out of loop and reaching return statement?
 		return !detector.isSuspect(r);
 	}
 	
@@ -68,5 +67,4 @@ public class SFDProcess extends Process {
 		}
 		catch (InterruptedException e) {}
 	}
-
 }
