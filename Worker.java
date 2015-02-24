@@ -130,10 +130,8 @@ public class Worker extends Thread {
 				if (! r.isResilient(src))
 					return ; 
 			}
-			/* Message statistics
-			 * 
-			 * r.incStats(m.getType());
-			 */
+			/* Message statistics */
+			r.incStats(m.getType());
 			MessageEntry entry = 
 				new MessageEntry(m.pack(), Utils.getPriority(m.getType()), System.currentTimeMillis());
 			destination.getQueue().put(entry);

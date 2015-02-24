@@ -34,7 +34,7 @@ public class Utils {
 		RANDOM
 	};
 	
-	public static final Delay delay = Delay.RANDOM;
+	public static final Delay delay = Delay.UNIFORM;
 	
 	/* `open` and `closed` events for testing routing algorithms 
 	 * without failure detectors */
@@ -46,10 +46,10 @@ public class Utils {
 	public static final String CHECK_NEXT = "CRT"; /* Check next best hops */
 	
 	/* Configuration parameters */
-	public static final Accuracy accuracy = Accuracy.EVENTUALLY_WEAK;
+	public static final Accuracy accuracy = Accuracy.DEFAULT;
 	
 	/* Link delay */
-	public static final int DELAY = 100; /* msecs; 1sec = 1000msecs */
+	public static final int DELAY = 10; /* msecs; 1sec = 1000msecs */
 	
 	/* Periodicity of heartbeat messages */
 	public static final int Delta = 1000; /* msecs; 1sec = 1000msecs */
@@ -63,7 +63,7 @@ public class Utils {
 	 * If true, message counters (as defined in hash-map `P` below), will
 	 * be polled every 100ms and written into file "./measurements.log".
 	 */
-	public static final boolean COLLECTSTATS = false;
+	public static final boolean COLLECTSTATS = true;
 	
 	/* Message priorities
 	 * 
