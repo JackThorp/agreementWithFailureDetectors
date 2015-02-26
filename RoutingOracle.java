@@ -87,6 +87,8 @@ public class RoutingOracle {
 			return false;
 		ArrayList<Integer> values = nodes.remove(key);
 		for (Integer U: values) {
+			if (nodes.containsKey(U))
+				continue;
 			int u = U.intValue();
 			edge[u][w] = 1;
 			edge[w][u] = 1;
