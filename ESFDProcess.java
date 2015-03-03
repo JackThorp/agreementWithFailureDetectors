@@ -128,6 +128,7 @@ public class ESFDProcess extends Process {
 					state = State.DECIDED;
 					Utils.out(pid, String.format("Decided: %d", value));
 				}
+//				break; //TODO: WHY THERE IS NOT BREAK????????
 				
 		}
 

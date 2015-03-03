@@ -5,10 +5,10 @@ import java.util.Iterator;
 public class NetchangeProcess extends Process {
 
 	private NetchangeDetector detector;
-	private Integer[] Du;
+	private Integer[] Du;				//estimated d(u,v), u=>pid
 	private Integer[] Nbu; 				//routing table
-	private Integer[][] ndisu;
-	private HashSet<Integer> Neighbours;
+	private Integer[][] ndisu;			//estimated d(w,v)
+	private HashSet<Integer> Neighbours; // note: all autoboxing safe < 128
 	private static int local = 999999; 	//TODO: what is local??
 
 //	Initialisation
@@ -59,8 +59,63 @@ public class NetchangeProcess extends Process {
 
 	@Override
 	public synchronized void receive(Message m) {
-		// TODO Auto-generated method stub
-		super.receive(m);
+		super.receive(m); // Util.out msg
+		int w;
+		switch(m.getType()) {
+			case "mydist":
+//				upon receipt of [mydist: v, d] from w
+//				ndisu [w][v] = d
+//				Recompute(v)
+				int v = Integer.parseInt(m.getPayload().split(",")[0]);
+				int d = Integer.parseInt(m.getPayload().split(",")[1]);
+				w = m.getSource();
+				ndisu[w][v] = d;
+				recompute(v);
+				break;
+
+			case "CLOSED":
+//				upon receipt of [closed: w]
+//				Neighborsu = Neighborsu \ { w }
+//				forall v in V do
+//				Recompute(v)	
+				w = Integer.parseInt(m.getPayload());
+				Neighbours.remove(w);
+//				for (int v = 0; v < n; v++) {
+//					
+//				}
+				break;
+				
+			case "OPENED":
+//				upon receipt of [open: w]
+//				Neighbors u = Neighbors u [ {w}
+//				forall v 2 V do
+//				ndis u [w][v] = n
+//				send [mydist: v, D u [v]] to w
+				w = Integer.parseInt(m.getPayload());
+				break;
+			default: // heartbeats 
+				detector.receive(m);
+				break;
+		}
+	}
+	
+	private void recompute(int v){
+//		if v = u then
+//		D u [v] = 0
+//		Nb u [v] = local
+//		else
+//		d = 1 + min{ ndis u [w][v] }
+//		such that w 2 Neighbors u
+//		if d < n then
+//		D u [v] = d
+//		Nb u [v] = w such that
+//		( 1 + ndis u [w][v]) = d
+//		else
+//		D u [v] = N
+//		Nb u [v] = undefined
+//		if D u [v] has changed then
+//		forall w 2 Neighbors u do
+//		send [mydist: v, D u [v]] to w
 	}
 
 	public static void main(String [] args) {
