@@ -113,7 +113,6 @@ class PerfectFailureDetector implements IFailureDetector {
 		}
 	}
 	
-	
 	protected synchronized void removeSuspect(Integer pid) {
 		if (suspects.contains(pid)) {
 			suspects.remove(pid);

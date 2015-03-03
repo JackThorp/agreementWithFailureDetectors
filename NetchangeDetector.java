@@ -7,12 +7,12 @@ public class NetchangeDetector extends PerfectFailureDetector {
 	@Override
 	public void isSuspected(Integer pid) {
 		super.isSuspected(pid);
-		p.receive(new Message(p.pid, p.pid, "CLOSED", String.format("%d", pid)));
+		p.unicast(new Message(p.pid, p.pid, "CLOSED", String.format("%d", pid)));
 	}
 
 	@Override
 	protected synchronized void removeSuspect(Integer pid) {
 		super.removeSuspect(pid);
-		p.receive(new Message(p.pid, p.pid, "OPENED", String.format("%d", pid)));
+		p.unicast(new Message(p.pid, p.pid, "OPENED", String.format("%d", pid)));
 	}
 }

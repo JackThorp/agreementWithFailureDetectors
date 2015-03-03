@@ -21,9 +21,9 @@ class NetchangeProcess extends Process {
 	private int mydistCount;
 	
 	public NetchangeProcess (String name, int pid, int n) {
-		super(name, pid, n);
-		
+		super(name, pid, n);	
 		mydistCount = 0;
+		
 		detector = new NetchangeDetector(this);
 		Du = new Integer[n + 1]; 		// processes start at 1 so we leave [0] blank
 		Nbu = new Integer[n + 1];		// Routing table
@@ -75,9 +75,10 @@ class NetchangeProcess extends Process {
 		return mydistCount;
 	}
 	
-	public synchronized void receive (Message m) { /* Dummy implementation */
+	@Override
+	public synchronized void receive (Message m) {
 		Utils.out(pid, m.toString());
-		super.receive(m); // Util.out msg
+
 		int w;
 		switch(m.getType()) {
 			// on 'mydist' - update neighbour estimates and recompute local estimate.
@@ -114,7 +115,6 @@ class NetchangeProcess extends Process {
 			case "heartbeat":
 				Neighbours.add(m.getSource());
 				detector.receive(m);
-				int nei = m.getSource();
 				break;
 		}
 	}
