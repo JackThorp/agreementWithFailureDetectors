@@ -1,66 +1,87 @@
 import java.util.HashSet;
-import java.util.Iterator;
 
+/* Copyright (c) 2013-2015, Imperial College London
+ * All rights reserved.
+ *
+ * Distributed Algorithms, CO347
+ */
 
-public class NetchangeProcess extends Process {
-
+class NetchangeProcess extends Process {
+	
+	/* This array stores the minimum hop-count 
+	 * distance to a destination `v` in [1,n] 
+	 */
 	private NetchangeDetector detector;
 	private Integer[] Du;				//estimated d(u,v), u=>pid
 	private Integer[] Nbu; 				//routing table
 	private Integer[][] ndisu;			//estimated d(w,v)
 	public HashSet<Integer> Neighbours; // note: all autoboxing safe < 128
-
-//	Initialisation
-//	D_u [N]
-//	Nb_u [N]
-//	ndis_u [N][N]
-//	Neighbours_u = {}
-	public NetchangeProcess(String name, int pid, int n) {
+	
+	/* Increments whenever a `mydist` message is received */
+	private int mydistCount;
+	
+	public NetchangeProcess (String name, int pid, int n) {
 		super(name, pid, n);
+		
+		mydistCount = 0;
 		detector = new NetchangeDetector(this);
 		Du = new Integer[n + 1]; 		// processes start at 1 so we leave [0] blank
 		Nbu = new Integer[n + 1];		// Routing table
 		ndisu = new Integer[n+1][n+1];	// Neighbour w's estimated distance to v ndisu[w][v] 
 	}
-
-	public void begin() {
+	
+	public void begin () {
 		detector.begin();
 		
-//		forall w, v in V do
-//		ndis_u [w][v] = N
+		// initialise neighbour estimates to n
 		for (int w = 1; w <= n; w++) {
 			for (int v = 1; v <= n; v++) {
 				ndisu[w][v] = n;
 			}
 		}
 		
-//		forall v in V do
-//		D_u [v] = N
-//		Nb_u [v] = undefined
+		// Set all local estimates to n & initialise routing table
 		for (int v = 1; v <= n; v++) {
 			Du[v] = n;
 			Nbu[v] = null;
 		}
 		
-//		D_u [u] = 0
-//		Nb u [u] = local
 		Du[pid] = 0;
 		Nbu[pid] = pid;
+	
+		broadcast("mydist", String.format("%d,%d", pid, 0));	}
+	
+	public void checkRoutingDistances () {
 		
-//		forall w in Neighbors_u do
-//		send [mydist: u, 0] to w
-		broadcast("mydist", String.format("%d,%d", pid, 0));
+		/* It creates a message of the form:
+		 * this.pid<|>0<|>Utils.CHECK_COST<|>1:D[1];2:D[2]...n:D[n]
+		 */
+		String payload = "";
+		String f;
+		for (int v = 1; v < n + 1; v++) {
+			f = "%d:%d";
+			if (v != n) f += ";";
+			payload += String.format(f, v, Du[v]);
+		}
+		Message m = new Message(pid, 0, Utils.CHECK_COST, payload);
+		if (unicast (m))
+			Utils.out(pid, "OK");
+		else
+			Utils.out(pid, "Error");
+		return ;
 	}
-
-	@Override
-	public synchronized void receive(Message m) {
+	
+	public int getMydistCount() {
+		return mydistCount;
+	}
+	
+	public synchronized void receive (Message m) { /* Dummy implementation */
+		Utils.out(pid, m.toString());
 		super.receive(m); // Util.out msg
 		int w;
 		switch(m.getType()) {
+			// on 'mydist' - update neighbour estimates and recompute local estimate.
 			case "mydist":
-//				upon receipt of [mydist: v, d] from w
-//				ndisu [w][v] = d
-//				Recompute(v)
 				Neighbours.add(m.getSource());
 				int v = Integer.parseInt(m.getPayload().split(",")[0]);
 				int d = Integer.parseInt(m.getPayload().split(",")[1]);
@@ -69,11 +90,9 @@ public class NetchangeProcess extends Process {
 				recompute(v);
 				break;
 
+			// on 'close' - remove from neighbours and recompute 
+			// local estimates to all destiantions
 			case "CLOSED":
-//				upon receipt of [closed: w]
-//				Neighborsu = Neighborsu \ { w }
-//				forall v in V do
-//				Recompute(v)	
 				w = Integer.parseInt(m.getPayload());
 				Neighbours.remove(w);
 				for (int _v = 1; _v <= n; _v++) {
@@ -81,12 +100,9 @@ public class NetchangeProcess extends Process {
 				}
 				break;
 				
+			// on 'opened' - add back to neighbour list and update
+			// all local estimates.				
 			case "OPENED":
-//				upon receipt of [open: w]
-//				Neighbors u = Neighbors u [ {w}
-//				forall v 2 V do
-//				ndis u [w][v] = n
-//				send [mydist: v, D u [v]] to w
 				w = Integer.parseInt(m.getPayload());
 				Neighbours.add(w);
 				for(int _v = 1; _v <= n; n++) {
@@ -104,21 +120,15 @@ public class NetchangeProcess extends Process {
 	}
 	
 	private void recompute(int v){
-//		if v = u then
-//		D u [v] = 0
-//		Nb u [v] = local
+
 		int old_v = Du[v];
+		
 		if(v == pid) {
 			Du[v] = 0;
 			Nbu[v] = pid;
 		}
-//		else
-//		d = 1 + min{ ndis u [w][v] }
-//		such that w 2 Neighbors u
-//		if d < n then
-//		D u [v] = d
-//		Nb u [v] = w such that
-//		( 1 + ndis u [w][v]) = d
+		// update local estimates if neighbours change
+		// improves on current minimum.
 		else {
 			int best_n = getBestNeighbour(v);
 			int d = 1 + ndisu[best_n][v];
@@ -126,17 +136,13 @@ public class NetchangeProcess extends Process {
 				Du[v] = d;
 				Nbu[v] = best_n;
 			}
-//			else
-//			D u [v] = N
-//			Nb u [v] = undefined
 			else {
 				Du[v] = n;
 				Nbu[v] = null;
 			}
 		}
-//		if D u [v] has changed then
-//		forall w 2 Neighbors u do
-//		send [mydist: v, D u [v]] to w
+
+		// if local estimate has changed, broadcast to neighbours
 		if (Du[v] != old_v) {
 			broadcast("mydist", String.format("%d,%d", v, Du[v]));
 		}
@@ -153,14 +159,59 @@ public class NetchangeProcess extends Process {
 		}
 		return nbr;
 	}
-
-	public static void main(String [] args) {
+	
+	public static void main (String [] args) {
 		String name = args[0];
 		int id = Integer.parseInt(args[1]);
-		int n = Integer.parseInt(args[2]);
+		int  n = Integer.parseInt(args[2]);
 		NetchangeProcess p = new NetchangeProcess(name, id, n);
-		p.registeR();
-		p.begin();
+		p.registeR ();
+		p.begin ();
+		
+		/* Check periodically for convergence. */
+		int current, previous = 0;
+		int count = 0;
+		
+		while (true) { /* Sleep, poll, check. */
+			try {
+				/* Follow the periodicity of heartbeat messages */
+				Thread.sleep(Utils.Delta);
+				/* Get the current `mydist` message count */
+				current = p.getMydistCount();
+				
+				/* For debugging purposes */
+				Utils.out(id, 
+				String.format("previous = %d, current = %d, count = %d", 
+				previous, current, count));
+				
+				if (previous == current) count ++;
+				else count = 0;
+				
+				/* 10 x Delta should be enough. */
+				if (count == 10) {
+					/* Check computed routing distances */
+					p.checkRoutingDistances();
+					
+					/*
+					 * At this point, you should print your routing table
+					 * (not distances) to a file named `name`-rt-1.txt.
+					 *
+					 * The format should be along the lines of:
+					 * String.format("%d:%s")
+					 * where:
+					 * %d is the destination id, and
+					 * %s is the string representation of the next best hop.
+					 * This can be "local", "undefined", or a number.
+					 */
+					
+					/* Reset counters */
+					previous = 0;
+				} else {
+					previous = current;
+				}
+			
+			} catch (Exception e) { e.printStackTrace(); }
+		}
 	}
-
 }
+
