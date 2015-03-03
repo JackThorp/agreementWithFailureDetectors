@@ -8,6 +8,7 @@ public class NetchangeProcess extends Process {
 	private Integer[] Du;				//estimated d(u,v), u=>pid
 	private Integer[] Nbu; 				//routing table
 	private Integer[][] ndisu;			//estimated d(w,v)
+	public HashSet<Integer> Neighbours; // note: all autoboxing safe < 128
 
 //	Initialisation
 //	D_u [N]
@@ -60,6 +61,7 @@ public class NetchangeProcess extends Process {
 //				upon receipt of [mydist: v, d] from w
 //				ndisu [w][v] = d
 //				Recompute(v)
+				Neighbours.add(m.getSource());
 				int v = Integer.parseInt(m.getPayload().split(",")[0]);
 				int d = Integer.parseInt(m.getPayload().split(",")[1]);
 				w = m.getSource();
@@ -73,7 +75,7 @@ public class NetchangeProcess extends Process {
 //				forall v in V do
 //				Recompute(v)	
 				w = Integer.parseInt(m.getPayload());
-				detector.removeNeighbour(w);
+				Neighbours.remove(w);
 				for (int _v = 1; _v <= n; _v++) {
 					recompute(_v);
 				}
@@ -86,19 +88,17 @@ public class NetchangeProcess extends Process {
 //				ndis u [w][v] = n
 //				send [mydist: v, D u [v]] to w
 				w = Integer.parseInt(m.getPayload());
-				detector.addNeighbour(w);
+				Neighbours.add(w);
 				for(int _v = 1; _v <= n; n++) {
 					ndisu[w][_v] = n;
 					unicast(new Message(pid, w, "mydist", String.format("%d,%d", _v, Du[_v])));
 				}
 				break;
 				
-			case "heartbeat": // heartbeat 
+			case "heartbeat":
+				Neighbours.add(m.getSource());
 				detector.receive(m);
 				int nei = m.getSource();
-				if (!detector.isSuspect(nei)) {
-					
-				}
 				break;
 		}
 	}
@@ -143,9 +143,9 @@ public class NetchangeProcess extends Process {
 	}
 
 	private int getBestNeighbour(int v) {
-		int nbr = (int) detector.Neighbours.toArray()[0];
+		int nbr = (int) Neighbours.toArray()[0];
 		int min_dist = ndisu[nbr][v];
-		for(int w : detector.Neighbours) {
+		for(int w : Neighbours) {
 			if(ndisu[w][v] < min_dist) {
 				nbr = w;
 				min_dist = ndisu[w][v];

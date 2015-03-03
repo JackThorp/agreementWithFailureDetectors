@@ -114,7 +114,7 @@ class PerfectFailureDetector implements IFailureDetector {
 	}
 	
 	
-	private synchronized void removeSuspect(Integer pid) {
+	protected synchronized void removeSuspect(Integer pid) {
 		if (suspects.contains(pid)) {
 			suspects.remove(pid);
 			Utils.out(p.pid, String.format("P%d has been unsuspected at %s",

@@ -1,36 +1,21 @@
-import java.util.HashSet;
-
-
 public class NetchangeDetector extends PerfectFailureDetector {
 
-	public HashSet<Integer> Neighbours; // note: all autoboxing safe < 128
 	
 	public NetchangeDetector(Process p) {
 		super(p);
-		Neighbours = new HashSet<>(); 
-	}
-
-	@Override
-	public synchronized void receive(Message m) {
-		Neighbours.add(m.getSource());
-		super.receive(m);
 	}
 
 	@Override
 	public void isSuspected(Integer pid) {
 		super.isSuspected(pid);
-		Neighbours.remove(pid);
+		p.unicast(new Message(p.pid, p.pid, "CLOSED", String.format("%d", pid)));
 	}
 
-	public void removeNeighbour(int w) {
-		Neighbours.remove(w);
+	@Override
+	protected synchronized void removeSuspect(Integer pid) {
+		super.removeSuspect(pid);
+		p.unicast(new Message(p.pid, p.pid, "OPENED", String.format("%d", pid)));
 	}
-
-	public void addNeighbour(int w) {
-		Neighbours.add(w);
-	}
-	
-	
 	
 
 }
