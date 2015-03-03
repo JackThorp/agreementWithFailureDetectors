@@ -5,9 +5,9 @@ import java.util.Iterator;
 public class NetchangeProcess extends Process {
 
 	private NetchangeDetector detector;
-	private Integer[] D;
-	private Integer[] Nb; 				//routing table
-	private Integer[][] ndis;
+	private Integer[] Du;
+	private Integer[] Nbu; 				//routing table
+	private Integer[][] ndisu;
 	private HashSet<Integer> Neighbours;
 	private static int local = 999999; 	//TODO: what is local??
 
@@ -19,9 +19,9 @@ public class NetchangeProcess extends Process {
 	public NetchangeProcess(String name, int pid, int n) {
 		super(name, pid, n);
 		detector = new NetchangeDetector(this);
-		D = new Integer[n + 1]; // processes start at 1 so we leave [0] blank
-		Nb = new Integer[n + 1];
-		ndis = new Integer[n+1][n+1];
+		Du = new Integer[n + 1]; // processes start at 1 so we leave [0] blank
+		Nbu = new Integer[n + 1];
+		ndisu = new Integer[n+1][n+1];
 		Neighbours = new HashSet<>();
 	}
 
@@ -32,7 +32,7 @@ public class NetchangeProcess extends Process {
 //		ndis_u [w][v] = N
 		for (int w = 1; w <= n; w++) {
 			for (int v = 1; v <= n; v++) {
-				ndis[w][v] = n;
+				ndisu[w][v] = n;
 			}
 		}
 		
@@ -40,14 +40,14 @@ public class NetchangeProcess extends Process {
 //		D_u [v] = N
 //		Nb_u [v] = undefined
 		for (int v = 1; v <= n; v++) {
-			D[v] = n;
-			Nb[v] = null;
+			Du[v] = n;
+			Nbu[v] = null;
 		}
 		
 //		D_u [u] = 0
 //		Nb u [u] = local
-		D[pid] = 0;
-		Nb[pid] = local;
+		Du[pid] = 0;
+		Nbu[pid] = local;
 		
 //		forall w in Neighbors_u do
 //		send [mydist: u, 0] to w
@@ -56,8 +56,6 @@ public class NetchangeProcess extends Process {
 			unicast(new Message(pid, w, "mydist", String.format("%d,%d", pid, 0)));
 		}
 	}
-	
-
 
 	@Override
 	public synchronized void receive(Message m) {
