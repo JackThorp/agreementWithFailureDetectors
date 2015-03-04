@@ -49,7 +49,7 @@ public class Utils {
 	public static final Accuracy accuracy = Accuracy.DEFAULT;
 	
 	/* Link delay */
-	public static final int DELAY = 10; /* msecs; 1sec = 1000msecs */
+	public static final int DELAY = 100; /* msecs; 1sec = 1000msecs */
 	
 	/* Periodicity of heartbeat messages */
 	public static final int Delta = 1000; /* msecs; 1sec = 1000msecs */

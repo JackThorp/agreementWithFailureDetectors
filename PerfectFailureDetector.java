@@ -4,12 +4,15 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 class PerfectFailureDetector implements IFailureDetector {
 	protected Process p;
     protected Timer t;
     protected HashSet<Integer> suspects;
-    protected HashMap<Integer, javax.swing.Timer> timeoutTimers;
+    protected HashMap<Integer, ScheduledThreadPoolExecutor> timeoutTimers;
 	
 	// Represents the timeout period for each neighbour
     protected HashMap<Integer, Integer> timeouts;
@@ -26,7 +29,7 @@ class PerfectFailureDetector implements IFailureDetector {
 	}
 	
 	
-	class TimeoutListener implements ActionListener {
+	class TimeoutListener implements Runnable {
 
 		private final Integer pid;
 		
@@ -36,7 +39,7 @@ class PerfectFailureDetector implements IFailureDetector {
 		
 		// Action performed after timeout expires, happens only once.
 		@Override
-		public synchronized void actionPerformed(ActionEvent e) {
+		public synchronized void run() {
             suspects.add(pid);
 			isSuspected(pid);
 		}
@@ -46,7 +49,7 @@ class PerfectFailureDetector implements IFailureDetector {
 	public PerfectFailureDetector(Process p) {
 		this.p = p;
 		t = new Timer();
-		timeoutTimers = new HashMap<Integer, javax.swing.Timer>();
+		timeoutTimers = new HashMap<Integer, ScheduledThreadPoolExecutor>();
 		suspects = new HashSet<Integer>();
 		timeouts = new HashMap<Integer, Integer>();
 		INITIAL_TIMEOUT = Utils.Delta + Utils.DELAY + SYSTEM_DELAY; 
@@ -65,15 +68,16 @@ class PerfectFailureDetector implements IFailureDetector {
 		}
 	}
 
-	
 	public synchronized void receive(Message m) {
 
 		Integer source = m.getSource();
 		
 		// If there is a timer running for this process, stop it
 		if (timeoutTimers.containsKey(source)) {
-			javax.swing.Timer oldTimer = timeoutTimers.get(source);
-			oldTimer.stop();
+			ScheduledThreadPoolExecutor oldTimer = timeoutTimers.get(source);
+			oldTimer.purge();
+			oldTimer.shutdown();
+			
 		}
 		
 		// Get the timeout period for this neighbour
@@ -121,9 +125,13 @@ class PerfectFailureDetector implements IFailureDetector {
 
 	private void startTimeout(Integer process, Integer timeout) {
 		TimeoutListener timeoutListener = new TimeoutListener(process);
-		javax.swing.Timer timeoutTimer = new javax.swing.Timer(timeout, timeoutListener);
-		timeoutTimer.setRepeats(false);
+		ScheduledThreadPoolExecutor timeoutTimer = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(5);
+		
+//				new ScheduledThreadPoolExecutor(timeout, timeoutListener);
+//		timeoutTimer.setRepeats(false);
+		
 		timeoutTimers.put(process, timeoutTimer);
-		timeoutTimer.start();
+		timeoutTimer.schedule(timeoutListener, timeout, TimeUnit.MILLISECONDS);
+//		timeoutTimer.start();
 	}
 }
