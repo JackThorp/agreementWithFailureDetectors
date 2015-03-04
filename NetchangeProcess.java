@@ -105,6 +105,7 @@ class NetchangeProcess extends Process {
 				for (int _v = 1; _v <= n; _v++) {
 					recompute(_v);
 				}
+				Utils.out("CLOSED "+w);
 				break;
 				
 			// on 'opened' - add back to neighbour list and update
@@ -116,11 +117,16 @@ class NetchangeProcess extends Process {
 					ndisu[w][_v] = n;
 					unicast(new Message(pid, w, "mydist", String.format("%d,%d", _v, Du[_v])));
 				}
+				Utils.out("OPENNNNNNNNed "+w);
 				break;
 				
 			case "heartbeat":
 				Neighbours.add(m.getSource());
 				detector.receive(m);
+				break;
+				
+			default:
+				Utils.out("SHOULD NOT HAPPENED");
 				break;
 		}
 		
