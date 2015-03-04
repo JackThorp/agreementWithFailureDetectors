@@ -1,3 +1,6 @@
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.util.HashSet;
 
 /* Copyright (c) 2013-2015, Imperial College London
@@ -27,7 +30,9 @@ class NetchangeProcess extends Process {
 		detector = new NetchangeDetector(this);
 		Du = new Integer[n + 1]; 		// processes start at 1 so we leave [0] blank
 		Nbu = new Integer[n + 1];		// Routing table
-		ndisu = new Integer[n+1][n+1];	// Neighbour w's estimated distance to v ndisu[w][v] 
+		ndisu = new Integer[n+1][n+1];	// Neighbour w's estimated distance to v ndisu[w][v]
+		Neighbours = new HashSet<>(); // note: all autoboxing safe < 128
+
 	}
 	
 	public void begin () {
@@ -49,7 +54,8 @@ class NetchangeProcess extends Process {
 		Du[pid] = 0;
 		Nbu[pid] = pid;
 	
-		broadcast("mydist", String.format("%d,%d", pid, 0));	}
+		broadcast("mydist", String.format("%d,%d", pid, 0));	
+	}
 	
 	public void checkRoutingDistances () {
 		
@@ -93,7 +99,7 @@ class NetchangeProcess extends Process {
 
 			// on 'close' - remove from neighbours and recompute 
 			// local estimates to all destiantions
-			case "CLOSED":
+			case Utils.CLOSED:
 				w = Integer.parseInt(m.getPayload());
 				Neighbours.remove(w);
 				for (int _v = 1; _v <= n; _v++) {
@@ -103,10 +109,10 @@ class NetchangeProcess extends Process {
 				
 			// on 'opened' - add back to neighbour list and update
 			// all local estimates.				
-			case "OPENED":
+			case Utils.OPENED:
 				w = Integer.parseInt(m.getPayload());
 				Neighbours.add(w);
-				for(int _v = 1; _v <= n; n++) {
+				for(int _v = 1; _v <= n; _v++) {
 					ndisu[w][_v] = n;
 					unicast(new Message(pid, w, "mydist", String.format("%d,%d", _v, Du[_v])));
 				}
@@ -117,11 +123,12 @@ class NetchangeProcess extends Process {
 				detector.receive(m);
 				break;
 		}
+		
 	}
 	
 	private void recompute(int v){
 
-		int old_v = Du[v];
+		Integer old_v = Du[v];
 		
 		if(v == pid) {
 			Du[v] = 0;
@@ -143,7 +150,7 @@ class NetchangeProcess extends Process {
 		}
 
 		// if local estimate has changed, broadcast to neighbours
-		if (Du[v] != old_v) {
+		if (!Du[v].equals(old_v)) {
 			broadcast("mydist", String.format("%d,%d", v, Du[v]));
 		}
 	}
@@ -192,6 +199,19 @@ class NetchangeProcess extends Process {
 					/* Check computed routing distances */
 					p.checkRoutingDistances();
 					
+					File rt1 = new File(name + "-rt-1.txt");
+					
+					if(!rt1.exists()){
+						rt1.createNewFile();
+					}
+					
+					FileWriter fw = new FileWriter(rt1.getAbsoluteFile());
+					BufferedWriter bw = new BufferedWriter(fw);
+					
+					for(int _v = 1; _v <= n; _v++){
+						bw.write(String.format("%d:%s\n", _v, p.Nbu[_v]));
+					}
+					bw.close();
 					/*
 					 * At this point, you should print your routing table
 					 * (not distances) to a file named `name`-rt-1.txt.

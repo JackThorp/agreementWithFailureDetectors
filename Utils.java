@@ -19,7 +19,7 @@ public class Utils {
 	
 	public static final boolean DEBUG = true;
 	
-	public static final boolean SELFMSGENABLED = false;
+	public static final boolean SELFMSGENABLED = true;
 	
 	public static final int MSG_QUEUE_SIZE = 100;
 	

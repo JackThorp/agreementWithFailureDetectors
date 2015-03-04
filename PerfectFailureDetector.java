@@ -53,7 +53,7 @@ class PerfectFailureDetector implements IFailureDetector {
 		timeoutTimers = new HashMap<Integer, javax.swing.Timer>();
 		suspects = new HashSet<Integer>();
 		timeouts = new HashMap<Integer, Integer>();
-		INITIAL_TIMEOUT = Utils.Delta + Utils.DELAY + SYSTEM_DELAY; 
+		INITIAL_TIMEOUT = 5000; //Utils.Delta + Utils.DELAY + SYSTEM_DELAY; 
 		TIMEOUT_INCR = 0; 
 	}
 
