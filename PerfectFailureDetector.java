@@ -75,9 +75,7 @@ class PerfectFailureDetector implements IFailureDetector {
 		// If there is a timer running for this process, stop it
 		if (timeoutTimers.containsKey(source)) {
 			ScheduledThreadPoolExecutor oldTimer = timeoutTimers.get(source);
-			oldTimer.purge();
-			oldTimer.shutdown();
-			
+			oldTimer.shutdownNow();
 		}
 		
 		// Get the timeout period for this neighbour
