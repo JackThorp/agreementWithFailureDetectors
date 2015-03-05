@@ -83,7 +83,7 @@ class NetchangeProcess extends Process {
 	
 	@Override
 	public synchronized void receive (Message m) {
-		Utils.out(pid, m.toString());
+//		Utils.out(pid, m.toString());
 
 		int w;
 		switch(m.getType()) {
