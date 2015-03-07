@@ -123,6 +123,8 @@ class NetchangeProcess extends Process {
 				break;
 				
 			case "heartbeat":
+				Utils.out(pid, String.format("P%d received a heartbeat %s , from %d",
+						pid, Utils.timeMillisToDateString(System.currentTimeMillis()), m.getSource()));
 				Neighbours.add(m.getSource());
 				detector.receive(m);
 				break;

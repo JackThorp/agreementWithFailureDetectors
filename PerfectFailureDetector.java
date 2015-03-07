@@ -41,17 +41,17 @@ class PerfectFailureDetector implements IFailureDetector {
 		// Action performed after timeout expires, happens only once.
 		@Override
 		public synchronized void run() {
-            suspects.add(pid);
-			isSuspected(pid);
+			suspects.add(pid);
+			isSuspected(pid);	
 		}
 		
 		public synchronized void startInTime(int timeout){
 			future = executor.schedule(TimeoutListener.this, timeout, TimeUnit.MILLISECONDS);
 		}
 		
-		public synchronized void stop(){
-			executor.remove(TimeoutListener.this);
+		public synchronized void stop() {
 			future.cancel(true);
+			executor.remove(TimeoutListener.this);
 		}
 	}
 	
@@ -81,14 +81,10 @@ class PerfectFailureDetector implements IFailureDetector {
 	}
 
 	public synchronized void receive(Message m) {
-
 		Integer source = m.getSource();
 		
 		// If there is a timer running for this process, stop it
-		if (timeoutTimers.containsKey(source)) {
-			TimeoutListener oldTimer = timeoutTimers.get(source);
-			oldTimer.stop();
-		}
+		stopOldTimer(source);
 		
 		// Get the timeout period for this neighbour
 		Integer timeout;
@@ -132,8 +128,18 @@ class PerfectFailureDetector implements IFailureDetector {
 					pid, Utils.timeMillisToDateString(System.currentTimeMillis())));
 		}
 	}
+	
+	private synchronized void stopOldTimer(Integer process) {
+		if (timeoutTimers.containsKey(process)) {
+			TimeoutListener oldTimer = timeoutTimers.get(process);
+			oldTimer.stop();
+			timeoutTimers.remove(process);
+		}
+	}
+	
 
-	private void startTimeout(Integer process, Integer timeout) {
+	private synchronized void startTimeout(Integer process, Integer timeout) {
+		stopOldTimer(process);
 		TimeoutListener timeoutListener = new TimeoutListener(process);
 		timeoutTimers.put(process, timeoutListener);
 		timeoutListener.startInTime(timeout);
