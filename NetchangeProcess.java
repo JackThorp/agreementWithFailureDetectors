@@ -23,6 +23,8 @@ class NetchangeProcess extends Process {
 	/* Increments whenever a `mydist` message is received */
 	private int mydistCount;
 	
+	private final int UNDEFINED = -1; 
+	
 	public NetchangeProcess (String name, int pid, int n) {
 		super(name, pid, n);	
 		mydistCount = 0;
@@ -162,8 +164,8 @@ class NetchangeProcess extends Process {
 	}
 
 	private int getBestNeighbour(int v) {
-		int nbr = (int) Neighbours.toArray()[0];
-		int min_dist = ndisu[nbr][v];
+		int nbr = UNDEFINED;
+		int min_dist = Integer.MAX_VALUE;
 		for(int w : Neighbours) {
 			if(ndisu[w][v] < min_dist) {
 				nbr = w;
