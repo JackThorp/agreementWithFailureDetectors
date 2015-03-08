@@ -128,7 +128,7 @@ class NetchangeProcess extends Process {
 				break;
 				
 			default:
-				Utils.out("SHOULD NOT HAPPENED");
+				Utils.out("SHOULD NOT HAPPEN");
 				break;
 		}
 		
