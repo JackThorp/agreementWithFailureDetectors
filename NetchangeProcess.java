@@ -137,14 +137,9 @@ class NetchangeProcess extends Process {
 	private void recompute(int v){
 
 		Integer old_v = Du[v];
-		
-		if(v == pid) {
-			Du[v] = 0;
-			Nbu[v] = pid;
-		}
 		// update local estimates if neighbours change
 		// improves on current minimum.
-		else {
+		if (v != pid ) {
 			int best_n = getBestNeighbour(v);
 			int d = 1 + ndisu[best_n][v];
 			if(d < n) {

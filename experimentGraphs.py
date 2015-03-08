@@ -14,16 +14,15 @@ for topology, n, faulty in experiments:
 	print "Topology = " + topology + " , n = " + n + " , toCrash = " + faulty
 	os.system("rm -f *.out *.err")
 	os.system("./sysmanager.sh start NetchangeProcess " + n + " networks/"+topology+".txt")
-	time.sleep(10)
+	time.sleep(11)
 	os.system("java FaultInjector -m \""+faulty+"<|>OFF\"")
-	time.sleep(10)
+	time.sleep(11)
 	os.system("java FaultInjector -m \""+faulty+"<|>ON\"")
-	time.sleep(10)
+	time.sleep(11)
 	os.system("./sysmanager.sh stop")
 	time.sleep(3)
 	print "Looking for errors..."
 	os.system("cat *.out | grep \"Error\"")
 	os.system("gnuplot -e \"network=\'"+topology+"\'\" plot.gnu")
 	print "_________________________________"
-	break
 
