@@ -18,7 +18,7 @@ class NetchangeProcess extends Process {
 	private Integer[] Du;				//estimated d(u,v), u=>pid
 	private Integer[] Nbu; 				//routing table
 	private Integer[][] ndisu;			//estimated d(w,v)
-	public HashSet<Integer> Neighbours; // note: all autoboxing safe < 128
+	private HashSet<Integer> Neighbours; // note: all autoboxing safe < 128	
 	
 	/* Increments whenever a `mydist` message is received */
 	private int mydistCount;
@@ -215,19 +215,7 @@ class NetchangeProcess extends Process {
 						bw.write(String.format("%d:%s\n", _v, p.Nbu[_v]));
 					}
 					bw.close();
-					/*
-					 * At this point, you should print your routing table
-					 * (not distances) to a file named `name`-rt-1.txt.
-					 *
-					 * The format should be along the lines of:
-					 * String.format("%d:%s")
-					 * where:
-					 * %d is the destination id, and
-					 * %s is the string representation of the next best hop.
-					 * This can be "local", "undefined", or a number.
-					 */
-					
-					/* Reset counters */
+
 					previous = 0;
 				} else {
 					previous = current;
