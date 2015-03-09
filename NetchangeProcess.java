@@ -23,7 +23,7 @@ class NetchangeProcess extends Process {
 	/* Increments whenever a `mydist` message is received */
 	private int mydistCount;
 	
-	private final int UNDEFINED = -1; 
+	private final static int UNDEFINED = -1; 
 	
 	public NetchangeProcess (String name, int pid, int n) {
 		super(name, pid, n);	
@@ -50,7 +50,7 @@ class NetchangeProcess extends Process {
 		// Set all local estimates to n & initialise routing table
 		for (int v = 1; v <= n; v++) {
 			Du[v] = n;
-			Nbu[v] = null;
+			Nbu[v] = UNDEFINED;
 		}
 		
 		Du[pid] = 0;
@@ -91,7 +91,7 @@ class NetchangeProcess extends Process {
 		switch(m.getType()) {
 			// on 'mydist' - update neighbour estimates and recompute local estimate.
 			case "mydist":
-				Neighbours.add(m.getSource());
+				addNeighbours(m.getSource());
 				int v = Integer.parseInt(m.getPayload().split(",")[0]);
 				int d = Integer.parseInt(m.getPayload().split(",")[1]);
 				w = m.getSource();
@@ -105,16 +105,18 @@ class NetchangeProcess extends Process {
 				w = Integer.parseInt(m.getPayload());
 				Neighbours.remove(w);
 				for (int _v = 1; _v <= n; _v++) {
-					recompute(_v);
+//					if(Neighbours.contains(_v)){
+						recompute(_v);
+//					}	
 				}
-				Utils.out("CLOSED "+w);
+				Utils.out("CLOSED "+w+" and neighbours are now "+Neighbours.toString());
 				break;
 				
 			// on 'opened' - add back to neighbour list and update
 			// all local estimates.				
 			case Utils.OPENED:
 				w = Integer.parseInt(m.getPayload());
-				Neighbours.add(w);
+				addNeighbours(w);
 				for(int _v = 1; _v <= n; _v++) {
 					ndisu[w][_v] = n;
 					unicast(new Message(pid, w, "mydist", String.format("%d,%d", _v, Du[_v])));
@@ -123,7 +125,7 @@ class NetchangeProcess extends Process {
 				break;
 				
 			case "heartbeat":
-				Neighbours.add(m.getSource());
+				addNeighbours(m.getSource());
 				detector.receive(m);
 				break;
 				
@@ -131,7 +133,10 @@ class NetchangeProcess extends Process {
 				Utils.out("SHOULD NOT HAPPEN");
 				break;
 		}
-		
+	}
+	
+	private void addNeighbours(int w){
+		if (w!=pid) Neighbours.add(w);
 	}
 	
 	private void recompute(int v){
@@ -139,16 +144,21 @@ class NetchangeProcess extends Process {
 		Integer old_v = Du[v];
 		// update local estimates if neighbours change
 		// improves on current minimum.
+//		if (v == pid) {
+//			Du[v] = 0;
+//			Nbu[v] = pid;
+//		}else{
 		if (v != pid ) {
 			int best_n = getBestNeighbour(v);
 			int d = 1 + ndisu[best_n][v];
+			Utils.out("Best Neighbour for "+v+" is "+best_n+" with distance "+d);
 			if(d < n) {
 				Du[v] = d;
 				Nbu[v] = best_n;
 			}
 			else {
 				Du[v] = n;
-				Nbu[v] = null;
+				Nbu[v] = UNDEFINED;
 			}
 		}
 
@@ -202,7 +212,7 @@ class NetchangeProcess extends Process {
 					/* Check computed routing distances */
 					p.checkRoutingDistances();
 					
-					File rt1 = new File(name + "-rt-1.txt");
+					File rt1 = new File(name + "-rt-1.out");
 					
 					if(!rt1.exists()){
 						rt1.createNewFile();
@@ -212,7 +222,13 @@ class NetchangeProcess extends Process {
 					BufferedWriter bw = new BufferedWriter(fw);
 					
 					for(int _v = 1; _v <= n; _v++){
-						bw.write(String.format("%d:%s\n", _v, p.Nbu[_v]));
+						String s = p.Nbu[_v].toString();
+						if (p.Nbu[_v] == p.pid){
+							s = "local";
+						}else if(p.Nbu[_v].equals(UNDEFINED)){
+							s = "undefined";
+						}
+						bw.write(String.format("%d:%s\n", _v, s));
 					}
 					bw.close();
 
