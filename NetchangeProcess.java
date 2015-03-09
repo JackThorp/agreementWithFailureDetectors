@@ -91,6 +91,7 @@ class NetchangeProcess extends Process {
 		switch(m.getType()) {
 			// on 'mydist' - update neighbour estimates and recompute local estimate.
 			case "mydist":
+				mydistCount++;
 				addNeighbours(m.getSource());
 				int v = Integer.parseInt(m.getPayload().split(",")[0]);
 				int d = Integer.parseInt(m.getPayload().split(",")[1]);
